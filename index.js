@@ -11,12 +11,16 @@ app.get('/scrape', async (req, res) => {
 
   try {
     const site = 'https://www.mamedica.co.uk/repeat-prescription/';
+    console.log('Opening page...');
     await page.goto(site, { waitUntil: 'domcontentloaded' });
+    const pageTitle = await page.title();
+    console.log('Page title:', pageTitle);
 
     const cookieBanner = page.locator('.cmplz-cookiebanner');
     if (await cookieBanner.isVisible({ timeout: 3000 }).catch(() => false)) {
       const acceptButton = cookieBanner.locator('.cmplz-btn.cmplz-accept');
       if (await acceptButton.isVisible()) {
+        console.log('Clicking cookie accept button...');
         await acceptButton.click();
         await page.waitForTimeout(500);
       }
@@ -37,17 +41,28 @@ app.get('/scrape', async (req, res) => {
       await page.fill('#input_3_53', '1');
       await page.waitForTimeout(50);
       const cost = (await page.inputValue('#input_3_67')).replace(/\s/g, '');
-      availableFlowers.push({ item: { name: flowerName, value: cost } });
+      availableFlowers.push({
+        item: {
+          name: flowerName,
+          value: cost,
+        }
+      });
     }
 
     const lastScrapeTimestamp = new Date().toISOString();
-    res.json({ data: availableFlowers, scrapedAt: lastScrapeTimestamp });
+    res.json({ scrapedAt: lastScrapeTimestamp, data: availableFlowers });
 
   } catch (error) {
+    console.error('Scrape error:', error);
     res.status(500).json({ error: 'Scraping failed', details: error.toString() });
   } finally {
     await browser.close();
+    console.log('Closed browser');
   }
 });
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.get('/', (req, res) => {
+  res.send('✅ Mamedica Scraper is running. Use /scrape to fetch data.');
+});
+
+app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
