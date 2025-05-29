@@ -13,6 +13,13 @@ app.get('/scrape', async (req, res) => {
     const site = 'https://www.mamedica.co.uk/repeat-prescription/';
     console.log('Opening page...');
     await page.goto(site, { waitUntil: 'domcontentloaded' });
+
+    // Wait until the title is exactly "Repeat Prescription | Mamedica"
+    await page.waitForFunction(
+      () => document.title === 'Repeat Prescription | Mamedica',
+      { timeout: 15000 } // Optional: 15 seconds timeout
+    );
+
     const pageTitle = await page.title();
     console.log('Page title:', pageTitle);
 
